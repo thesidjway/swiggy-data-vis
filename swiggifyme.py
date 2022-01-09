@@ -43,6 +43,7 @@ catch(err) {
 
 st.code(code, language='javascript')
 
+
 up_data_file = st.file_uploader("Upload JSON",type=["json"])
 
 if up_data_file is not None:
@@ -56,6 +57,9 @@ if up_data_file is not None:
     total_savings = 0
     total_distance = 0
     latlon = []
+    isVeg = [0, 0, 0]
+    totalOrders = 0
+    dishes = []
 
     for index, row in df.iterrows():
         A = row['ordered_time_in_seconds']
@@ -67,21 +71,28 @@ if up_data_file is not None:
         waiting += float(row['delivery_time_in_seconds'])
         latlontup = tuple(float(s) for s in row['restaurant_lat_lng'].split (","))
         latlon.append( latlontup )
+        for row1 in row['order_items']:
+            isVeg[int(row1['is_veg'])] += 1
+            totalOrders += 1
+            dishes.append(row1['name'])
+            #category
 
+    print(isVeg, totalOrders)
     average_spend = total_spend/num_orders
     waiting_per_order = (waiting/60) / num_orders
     average_distance = total_distance / num_orders
     city_split = df.restaurant_city_name.value_counts()
+    restaurant_split = df.restaurant_name.value_counts()
 
     top_10_dishes = [('Chicken', 50), ('Chicken', 50), ('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50)]
-    top_10_restaurants = [('Dominos', 50), ('Dominos', 50), ('Dominos', 50),('Dominos', 50),('Dominos', 50),('Dominos', 50),('Dominos', 50),('Dominos', 50),('Dominos', 50), ('Dominos', 50)]
     top_10_categories = [('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50)] 
-    veg_nonveg_egg_split = [0.3, 0.6, 0.1]
+
     day_of_week_split = [(60, 'Monday'), (50, 'Tuesday'), (40, 'Wednesday'), (30, 'Thursday'), (20, 'Friday'), (15, 'Saturday'), (10, 'Sunday')]
     month_split = [(60, 'February'), (50, 'January'), (40, 'May'), (30, 'November'), (25, 'March'), (24, 'June'), (22, 'December'), (20, 'August'), (15, 'September'), (14, 'October'), (10, 'April'), (8, 'July')]
     year_split = [(100, 2021), (90, 2020), (80, 2019), (70, 2016), (60, 2022), (50, 2017), (20, 2018)]
     hour_split = [10, 5, 5, 3, 6, 8, 6, 15, 20, 32, 40, 30, 22, 25, 20, 16, 15, 10, 9, 2, 10, 2, 2, 1]
-    top_city = "Bangalore"
+    
+    top_city = city_split.index[0]
     streak = 10
 
     # st.dataframe(df)
@@ -111,29 +122,19 @@ if up_data_file is not None:
         22 : ('10:00PM', '11:00PM'),
         23 : ('11:00PM', 'midnight'),
     }
-
-    for num, i in enumerate(order_data):
-        # Iterate through all orders
-        df = pd.DataFrame.from_dict(i, orient='index')
-        # print(df)
-        
+       
     date = datetime.datetime.fromtimestamp(first_order_time)
     line1 = f"Since your first order on {date}, you've ordered {num_orders} times, spent ₹{total_spend} at an average of ₹{average_spend} per order"
     st.subheader(line1)
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Top Dish", str(top_10_dishes[0][0]))
-    col2.metric("Top Restaurant", str(top_10_restaurants[0][0]))
+    col2.metric("Top Restaurant", str(restaurant_split.index[0]))
     col3.metric("Top Category", str(top_10_categories[0][0]))
 
     #TODO: Show top 10 here
-    top10data = {
-        'Category': [str(top_10_categories[0][0])],
-        'Restaurant': [str(top_10_restaurants[0][0])],
-        'Dish': [str(top_10_dishes[0][0])]
-    }
-    top10tab = pd.DataFrame(top10data)
-    st.table(top10tab)
+    st.table(city_split[:10])
+    st.table(restaurant_split[:10])
 
     line2 = f"Your most prolific year was {year_split[0][1]}, month was {month_split[0][1]} and day was {day_of_week_split[0][1]}. The city you ordered most in was: {top_city}, but you'd have known that already!"
     st.subheader(line2)
