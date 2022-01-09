@@ -9,7 +9,40 @@ import time
 st.title('SwiggifyMe!')
 st.header('Visualize your Swiggy order statistics here.')
 
-st.caption("Follow these instructions and create a JSON on swiggy.com. Upload the JSON here (It never reaches any server, don't worry!)")
+st.caption("Follow these instructions and create a JSON on swiggy.com. Upload the JSON here (We don't intend to access the data in any way or form)")
+st.caption("1. Go to www.swiggy.com and log in to your account")
+st.caption("2. Go to https://www.swiggy.com/my-account/orders")
+st.caption("3. Press F12 on your browser, paste the script below into the console")
+st.caption("4. Upload the downloaded orders.json here!")
+
+code = '''order_array=[]
+order_id=''
+page = 1
+try {
+    while(true){
+        var xmlHttp = new XMLHttpRequest()
+        xmlHttp.open("GET", "https://www.swiggy.com/dapi/order/all?order_id="+order_id, false)
+        xmlHttp.send(null)
+        resText=xmlHttp.responseText
+        var resJSON = JSON.parse(resText)
+        order_id=resJSON.data.orders[resJSON.data.orders.length-1].order_id
+        order_array=order_array.concat(resJSON.data.orders)
+        console.log("On page: "+page+" with last order id: "+order_id)
+        page++
+    }
+}
+catch(err) {
+    const a = document.createElement("a");
+    const file = new Blob([JSON.stringify(order_array, null, 2)], { type: "text/plain" });
+    a.href = URL.createObjectURL(file);
+    a.download = "orders.json";
+    a.click();
+    console.log(order_array)
+}
+'''
+
+st.code(code, language='javascript')
+
 up_data_file = st.file_uploader("Upload JSON",type=["json"])
 
 if up_data_file is not None:

@@ -15,5 +15,10 @@ try {
     }
 }
 catch(err) {
+    const a = document.createElement("a");
+    const file = new Blob([JSON.stringify(order_array)], { type: "text/plain" });
+    a.href = URL.createObjectURL(file);
+    a.download = "orders.json";
+    a.click();
     console.log(order_array)
 }
