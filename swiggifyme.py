@@ -46,7 +46,7 @@ for num, i in enumerate(order_data):
 st.title('SwiggifyMe!')
 st.header('Visualize your Swiggy order statistics here.')
 
-components.html('<base href="."><script type="module" src="getdata.js"></script> <input type = "button" onclick = "openInNewTab("https://google.com");" value = "Display">', height=100)
+components.html('<script src="https://cdn.jsdelivr.net/gh/thesidjway/swiggy-data-vis@main/test_scripts/getdata.js"></script> <input type = "button" onclick = "openInNewTab("https://google.com");" value = "Display">', height=100)
 
 
 st.caption('Please log in to your Swiggy account on your web browser, and click the button below. We do not store any of your data!')

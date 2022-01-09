@@ -1,6 +1,4 @@
-function openInNewTab(href) {
-    Object.assign(document.createElement('a'), {
-      target: '_blank',
-      href: href,
-    }).click();
+function openInNewTab(url) {
+  window.open(url, '_blank').focus();
 }
+ 
