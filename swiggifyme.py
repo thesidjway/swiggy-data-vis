@@ -6,6 +6,9 @@ import datetime
 import math
 import time
 import operator
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 st.title('SwiggifyMe!')
 st.header('Visualize your Swiggy order statistics here.')
@@ -193,18 +196,65 @@ if up_data_file is not None:
     Keymax = max(zip(year_split.values(), year_split.keys()))[1]
     max_day_index = day_of_week_split.index(max(day_of_week_split))
 
+    month_dict = dict()
+    day_dict = dict()
+
+    for key, val in month_to_name.items():
+        month_dict[val] = month_split[key]
+    
+    for key, val in day_to_name.items():
+        day_dict[val] = day_of_week_split[key]
+
+
     line2 = f"Your most prolific year was {Keymax}, month was {month_to_name[max_mo_index]} and day was {day_to_name[max_day_index]}. The city you ordered most in was: {top_city}, but you'd have known that already!"
     st.subheader(line2)
+    st.bar_chart(data=pd.DataFrame.from_dict(day_dict, orient='index'), use_container_width=True)
+    st.bar_chart(data=pd.DataFrame.from_dict(month_dict, orient='index'), use_container_width=True)
+    st.bar_chart(data=pd.DataFrame.from_dict(year_split, orient='index'), use_container_width=True)
     
     st.subheader("Top Cities")
     st.table(city_split[:10])
 
     max_hr_index = hour_split.index(max(hour_split))
 
+    print(hour_split)
+
     line3 = f"You ordered the most between {time_to_start_end[max_hr_index][0]} and {time_to_start_end[max_hr_index][1]}: {hour_split[max_hr_index]} times"
     st.subheader(line3)
 
-    #TODO: Show all timewise data here
+    N = 23
+    bottom = 2
+
+    # create theta for 24 hours
+    theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
+
+    # hour_split = np.random.randint(0, 24, size = 500) 
+
+    # make the histogram that bined on 24 hour
+    radii = np.array([val for num, val in enumerate(hour_split[:-1])])
+    ticks = np.array([num for num, val in enumerate(hour_split[:-1])])
+
+    print(radii)
+    print(ticks)
+
+    # width of each bin on the plot
+    width = (2*np.pi) / N
+
+    # make a polar plot
+    fig = plt.figure(figsize = (12, 100))
+    ax = plt.subplot(111, polar=True)
+    bars = ax.bar(theta, radii, width=width, bottom=bottom)
+
+    # set the lable go clockwise and start from the top
+    ax.set_theta_zero_location("N")
+    # clockwise
+    ax.set_theta_direction(-1)
+
+    # set the label
+    ticks = ['0:00', '3:00', '6:00', '9:00', '12:00', '15:00', '18:00', '21:00']
+    ax.set_xticklabels(ticks)
+
+    st.pyplot(fig)
 
     line4 = f"You spent {math.ceil(waiting/3600)} hours waiting for your orders, that's an average of {waiting_per_order:.2f} minutes per order"
     st.subheader(line4)
