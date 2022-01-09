@@ -43,6 +43,27 @@ catch(err) {
 
 st.code(code, language='javascript')
 
+def day_time_month_year_split(timestrings):
+    day_of_week_split = [0,0,0,0,0,0,0]
+    hour_split = [0]*24
+    month_split = [0]*12
+    year_split = dict()
+    for i in timestrings:
+        year = int(i.split('-')[0])
+        month = int(i.split('-')[1])
+        date = int(i.split('-')[2].split(' ')[0])
+        hour = int(i.split(' ')[-1].split(':')[0])
+        day = datetime.datetime(year, month, date, hour, 0, 0).weekday()
+        day_of_week_split[day] += 1
+        month_split[month - 1] += 1
+        hour_split[hour] += 1
+        if year not in year_split.keys():
+            year_split[year] = 1
+        else:
+            year_split[year] += 1
+    
+    return day_of_week_split, hour_split, month_split, year_split 
+
 
 up_data_file = st.file_uploader("Upload JSON",type=["json"])
 
@@ -77,20 +98,16 @@ if up_data_file is not None:
             dishes.append(row1['name'])
             #category
 
-    print(isVeg, totalOrders)
     average_spend = total_spend/num_orders
     waiting_per_order = (waiting/60) / num_orders
     average_distance = total_distance / num_orders
     city_split = df.restaurant_city_name.value_counts()
     restaurant_split = df.restaurant_name.value_counts()
+    timestamps = df.order_time
+    day_of_week_split, hour_split, month_split, year_split = day_time_month_year_split(timestamps)
 
     top_10_dishes = [('Chicken', 50), ('Chicken', 50), ('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50)]
     top_10_categories = [('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50)] 
-
-    day_of_week_split = [(60, 'Monday'), (50, 'Tuesday'), (40, 'Wednesday'), (30, 'Thursday'), (20, 'Friday'), (15, 'Saturday'), (10, 'Sunday')]
-    month_split = [(60, 'February'), (50, 'January'), (40, 'May'), (30, 'November'), (25, 'March'), (24, 'June'), (22, 'December'), (20, 'August'), (15, 'September'), (14, 'October'), (10, 'April'), (8, 'July')]
-    year_split = [(100, 2021), (90, 2020), (80, 2019), (70, 2016), (60, 2022), (50, 2017), (20, 2018)]
-    hour_split = [10, 5, 5, 3, 6, 8, 6, 15, 20, 32, 40, 30, 22, 25, 20, 16, 15, 10, 9, 2, 10, 2, 2, 1]
     
     top_city = city_split.index[0]
     streak = 10
@@ -122,6 +139,31 @@ if up_data_file is not None:
         22 : ('10:00PM', '11:00PM'),
         23 : ('11:00PM', 'midnight'),
     }
+    month_to_name = {
+        0 : 'January',
+        1 : 'February',
+        2 : 'March',
+        3 : 'April',
+        4 : 'May',
+        5 : 'June',
+        6 : 'July',
+        7 : 'August',
+        8 : 'September',
+        9 : 'October',
+        10 : 'November',
+        11 : 'December'
+    }
+
+    day_to_name = {
+        0 : 'Monday',
+        1 : 'Tuesday',
+        2 : 'Wednesday',
+        3 : 'Thursday',
+        4 : 'Friday',
+        5 : 'Saturday',
+        6 : 'Sunday',
+    }
+    
        
     date = datetime.datetime.fromtimestamp(first_order_time)
     line1 = f"Since your first order on {date}, you've ordered {num_orders} times, spent ₹{total_spend} at an average of ₹{average_spend} per order"
@@ -136,12 +178,16 @@ if up_data_file is not None:
     st.table(city_split[:10])
     st.table(restaurant_split[:10])
 
-    line2 = f"Your most prolific year was {year_split[0][1]}, month was {month_split[0][1]} and day was {day_of_week_split[0][1]}. The city you ordered most in was: {top_city}, but you'd have known that already!"
+    max_mo_index = month_split.index(max(month_split))
+    Keymax = max(zip(year_split.values(), year_split.keys()))[1]
+    max_day_index = day_of_week_split.index(max(day_of_week_split))
+
+    line2 = f"Your most prolific year was {Keymax}, month was {month_to_name[max_mo_index]} and day was {day_to_name[max_day_index]}. The city you ordered most in was: {top_city}, but you'd have known that already!"
     st.subheader(line2)
 
-    max_index = hour_split.index(max(hour_split))
+    max_hr_index = hour_split.index(max(hour_split))
 
-    line3 = f"You ordered the most between: {time_to_start_end[max_index][0]} and {time_to_start_end[max_index][1]}: {hour_split[max_index]} times"
+    line3 = f"You ordered the most between: {time_to_start_end[max_hr_index][0]} and {time_to_start_end[max_hr_index][1]}: {hour_split[max_hr_index]} times"
     st.subheader(line3)
 
     #TODO: Show all timewise data here
@@ -159,9 +205,6 @@ if up_data_file is not None:
         latlon, columns = ['lat', 'lon']
     )
     st.map(mapdf)
-
-    line7 = f"You had an ordering streak of {streak} days between <date1> and <date2>, wow!"
-    st.subheader(line7)
 
 payment_button_url = r'<form><script src="https://checkout.razorpay.com/v1/payment-button.js" data-payment_button_id="pl_Ihe4fKr1AVERm8" async> </script></form>'
 
