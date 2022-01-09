@@ -5,6 +5,7 @@ import json
 import datetime
 import math
 import time
+import operator
 
 st.title('SwiggifyMe!')
 st.header('Visualize your Swiggy order statistics here.')
@@ -81,6 +82,7 @@ if up_data_file is not None:
     isVeg = [0, 0, 0]
     totalOrders = 0
     dishes = []
+    category = []
 
     for index, row in df.iterrows():
         A = row['ordered_time_in_seconds']
@@ -96,19 +98,25 @@ if up_data_file is not None:
             isVeg[int(row1['is_veg'])] += 1
             totalOrders += 1
             dishes.append(row1['name'])
-            #category
+            category.append(row1['category_details']['category'])
 
     average_spend = total_spend/num_orders
     waiting_per_order = (waiting/60) / num_orders
     average_distance = total_distance / num_orders
     city_split = df.restaurant_city_name.value_counts()
     restaurant_split = df.restaurant_name.value_counts()
+    dishes_split = {}
+    for items in dishes:
+        dishes_split[items] = dishes.count(items)
+    dishes_split_s = dict(sorted(dishes_split.items(), key=operator.itemgetter(1),reverse=True))
+    category_split = {}
+    for items in category:
+        category_split[items] = category.count(items)
+    category_split_s = dict(sorted(category_split.items(), key=operator.itemgetter(1),reverse=True))
+
     timestamps = df.order_time
     day_of_week_split, hour_split, month_split, year_split = day_time_month_year_split(timestamps)
 
-    top_10_dishes = [('Chicken', 50), ('Chicken', 50), ('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50),('Chicken', 50)]
-    top_10_categories = [('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50), ('Pizza', 50)] 
-    
     top_city = city_split.index[0]
     streak = 10
 
@@ -166,17 +174,20 @@ if up_data_file is not None:
     
        
     date = datetime.datetime.fromtimestamp(first_order_time)
-    line1 = f"Since your first order on {date}, you've ordered {num_orders} times, spent ₹{total_spend} at an average of ₹{average_spend} per order"
+    line1 = f"Since your first order on {date.date()}, you've ordered {num_orders} times, spent ₹{total_spend:.2f} at an average of ₹{average_spend:.2f} per order"
     st.subheader(line1)
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Top Dish", str(top_10_dishes[0][0]))
+    col1.metric("Top Dish", max(dishes_split.items(), key = operator.itemgetter(1))[0])
     col2.metric("Top Restaurant", str(restaurant_split.index[0]))
-    col3.metric("Top Category", str(top_10_categories[0][0]))
+    col3.metric("Top Category", max(category_split.items(), key = operator.itemgetter(1))[0])
 
-    #TODO: Show top 10 here
-    st.table(city_split[:10])
+    st.subheader("Top Restaurants: ")
     st.table(restaurant_split[:10])
+    st.subheader("Top Categories: ")
+    st.table(pd.DataFrame(category_split_s, index=[0]).transpose()[:10])
+    st.subheader("Top Dishes: ")
+    st.table(pd.DataFrame(dishes_split_s, index=[0]).transpose()[:10])
 
     max_mo_index = month_split.index(max(month_split))
     Keymax = max(zip(year_split.values(), year_split.keys()))[1]
@@ -184,18 +195,21 @@ if up_data_file is not None:
 
     line2 = f"Your most prolific year was {Keymax}, month was {month_to_name[max_mo_index]} and day was {day_to_name[max_day_index]}. The city you ordered most in was: {top_city}, but you'd have known that already!"
     st.subheader(line2)
+    
+    st.subheader("Top Cities")
+    st.table(city_split[:10])
 
     max_hr_index = hour_split.index(max(hour_split))
 
-    line3 = f"You ordered the most between: {time_to_start_end[max_hr_index][0]} and {time_to_start_end[max_hr_index][1]}: {hour_split[max_hr_index]} times"
+    line3 = f"You ordered the most between {time_to_start_end[max_hr_index][0]} and {time_to_start_end[max_hr_index][1]}: {hour_split[max_hr_index]} times"
     st.subheader(line3)
 
     #TODO: Show all timewise data here
 
-    line4 = f"You spent {math.ceil(waiting/3600)} hours waiting for your orders, that's an average of {waiting_per_order} minutes per order"
+    line4 = f"You spent {math.ceil(waiting/3600)} hours waiting for your orders, that's an average of {waiting_per_order:.2f} minutes per order"
     st.subheader(line4)
 
-    line5 = f"You ordered from restaurants that were, on an average, {average_distance} KM away. That means, Swiggy delivery men travelled {total_distance} KM just to deliver your orders. Another reason to tip them well!"
+    line5 = f"You ordered from restaurants that were, on an average, {average_distance:.2f} KM away. That means, Swiggy delivery men travelled {total_distance:.2f} KM just to deliver your orders. Another reason to tip them well!"
     st.subheader(line5)
 
     line6 = f"Here's a map of all the places you ordered from! (In case of multiple geographies, please zoom in using your mouse)"
