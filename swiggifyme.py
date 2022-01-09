@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components 
 import pandas as pd
 import json
 import datetime
@@ -124,11 +125,8 @@ if st.button('Click here to get your data'):
     line7 = f"You had an ordering streak of {streak} days between <date1> and <date2>, wow!"
     st.subheader(line7)
 
+payment_button_url = r'<form><script src="https://checkout.razorpay.com/v1/payment-button.js" data-payment_button_id="pl_Ihe4fKr1AVERm8" async> </script></form>'
 
-
-
-
-
-
+components.html(payment_button_url, height = 1000)
 
 st.caption('Developed by @thesidjway and @shashwatg1 in 12 hrs as a part of the half-day build hackathon, organized by @louispereira')
